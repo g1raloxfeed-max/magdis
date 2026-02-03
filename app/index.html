@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Magdis Search UI</title>
+    <style>
+      :root {
+        --bg: #0f141a;
+        --panel: #151d26;
+        --panel-2: #0b1117;
+        --text: #e6edf3;
+        --muted: #93a4b7;
+        --accent: #5cc8ff;
+        --accent-2: #7cff8b;
+        --border: #243140;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 600px at 70% -10%, #1f2a38, var(--bg));
+        color: var(--text);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 32px auto;
+        padding: 0 20px 40px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0;
+        letter-spacing: 0.2px;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: linear-gradient(180deg, var(--panel), var(--panel-2));
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      input, textarea, button {
+        width: 100%;
+        font-size: 14px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #0c1218;
+        color: var(--text);
+      }
+      textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+      button {
+        cursor: pointer;
+        border: none;
+        background: linear-gradient(135deg, var(--accent), #4aa7d8);
+        color: #06283a;
+        font-weight: 600;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(92, 200, 255, 0.2);
+      }
+      .secondary {
+        background: linear-gradient(135deg, var(--accent-2), #4dd36b);
+        color: #072212;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .results {
+        margin-top: 16px;
+        display: grid;
+        gap: 10px;
+      }
+      .result {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px;
+        background: #0c1218;
+      }
+      .result strong {
+        color: var(--accent);
+      }
+      .status {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+        color: #a7b4c3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Magdis Video Search</h1>
+        <div class="muted">CLIP + Elasticsearch demo UI</div>
+      </header>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Ingest Video</h3>
+          <label>Video path</label>
+          <input id="videoPath" placeholder="data/videos/sample.mp4" />
+          <div class="row">
+            <div>
+              <label>Camera ID</label>
+              <input id="cameraId" value="cam01" />
+            </div>
+            <div>
+              <label>FPS</label>
+              <input id="fps" value="1" />
+            </div>
+          </div>
+          <button id="ingestBtn">Start ingest</button>
+          <div class="status" id="ingestStatus"></div>
+        </div>
+
+        <div class="card">
+          <h3>Search</h3>
+          <label>Text query</label>
+          <input id="query" value="red car" />
+          <div class="row">
+            <div>
+              <label>Top-K</label>
+              <input id="topK" value="5" />
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <button class="secondary" id="searchBtn">Run search</button>
+            </div>
+          </div>
+          <div class="status" id="searchStatus"></div>
+          <div class="results" id="results"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <h3>Notes</h3>
+        <div class="mono">
+          API: POST /api/ingest (video_path, camera_id, fps), POST /api/search (query, top_k)
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const ingestBtn = document.getElementById("ingestBtn");
+      const ingestStatus = document.getElementById("ingestStatus");
+      const searchBtn = document.getElementById("searchBtn");
+      const searchStatus = document.getElementById("searchStatus");
+      const resultsEl = document.getElementById("results");
+
+      ingestBtn.addEventListener("click", async () => {
+        ingestStatus.textContent = "Running ingest...";
+        try {
+          const payload = {
+            video_path: document.getElementById("videoPath").value.trim(),
+            camera_id: document.getElementById("cameraId").value.trim(),
+            fps: parseFloat(document.getElementById("fps").value),
+          };
+          const res = await fetch("/api/ingest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Ingest failed");
+          ingestStatus.textContent = `Indexed frames: ${data.indexed}`;
+        } catch (err) {
+          ingestStatus.textContent = `Error: ${err.message}`;
+        }
+      });
+
+      searchBtn.addEventListener("click", async () => {
+        searchStatus.textContent = "Searching...";
+        resultsEl.innerHTML = "";
+        try {
+          const payload = {
+            query: document.getElementById("query").value.trim(),
+            top_k: parseInt(document.getElementById("topK").value, 10),
+          };
+          const res = await fetch("/api/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Search failed");
+          const results = data.results || [];
+          searchStatus.textContent = `Results: ${results.length}`;
+          results.forEach((item, idx) => {
+            const div = document.createElement("div");
+            div.className = "result";
+            div.innerHTML = `
+              <div><strong>#${idx + 1}</strong> score=${item.score.toFixed(4)}</div>
+              <div>camera_id=${item.camera_id}</div>
+              <div>video_path=${item.video_path}</div>
+              <div>timestamp=${item.timestamp}</div>
+              <div>frame_index=${item.frame_index}</div>
+              <div>frame_id=${item.frame_id}</div>
+            `;
+            resultsEl.appendChild(div);
+          });
+        } catch (err) {
+          searchStatus.textContent = `Error: ${err.message}`;
+        }
+      });
+    </script>
+  </body>
+</html>

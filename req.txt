@@ -1,31 +1,27 @@
-# === Ядро AI и обработки видео (с поддержкой GPU) ===
-torch>=2.0.0
-torchvision>=0.15.0
-transformers>=4.30.0
-accelerate>=0.20.0
-# Ускорение вычислений для NVIDIA GPU
-nvidia-cudnn-cu12==9.1.1.17  # Критически важно для работы CUDA на Windows
+# Web / API
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
 
-# === Обработка видео и изображений ===
-opencv-python>=4.7.0
-pillow>=10.0.0
-scenedetect>=0.6.0  # Для автоматического обнаружения сцен
-ffmpeg-python>=0.2.0  # Для работы с видеофайлами
+# Video
+opencv-python-headless==4.9.0.80
+ffmpeg-python==0.2.0
+av==12.0.0
 
-# === Elasticsearch и работа с данными ===
-elasticsearch>=8.0.0
-# Дополнительно для удобства работы с Elasticsearch (опционально)
-eland>=8.0.0  # Для загрузки ML-моделей в Elasticsearch
-# Для структурированного хранения метаданных (если планируете СУБД)
-# psycopg2-binary>=2.9.0  # Для PostgreSQL
+# CLIP / Transformers
+transformers==4.38.2
+huggingface-hub>=0.19.0,<1.0
+tokenizers>=0.14,<0.16
+ftfy==6.1.1
+regex>=2023.10.3
+pillow==10.0.1
 
-# === Утилиты и интерфейс ===
-numpy>=1.24.0
-pandas>=2.0.0
-tqdm>=4.65.0  # Для прогресс-баров
-python-dotenv>=1.0.0  # Для управления настройками (URL ES, API-ключи)
+# Elasticsearch
+elasticsearch==8.12.1
 
-# === Веб-интерфейс (опционально, для демонстрации) ===
-streamlit>=1.22.0
-# или
-# gradio>=3.35.0
+# Utils
+numpy==1.26.4
+scipy==1.12.0
+python-dotenv==1.0.1
+pydantic==2.6.3
+tqdm==4.66.2
+loguru==0.7.2

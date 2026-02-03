@@ -1,104 +1,21 @@
-# ============ Python ============
-# Виртуальное окружение
 venv/
-env/
-.venv/
-
-# Кэш Python
 __pycache__/
-*.py[cod]
-*$py.class
-
-# Распределенные файлы и установщики
-*.egg-info/
-*.egg
-dist/
-build/
-pip-wheel-metadata/
-
-# Файлы окружения
+*.pyc
+*.pyo
+*.pyd
 .env
-.env.local
-.env.*.local
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Тестовые покрытия
-.coverage
-htmlcov/
-.pytest_cache/
-
-# ============ Данные и модели ============
-# Папка с видео и данными (можно частично игнорировать)
-/data/
-# Но можно оставить README в папке data
-!/data/README.md
-
-# Эмбединги и индексы (бинарные данные)
-*.embedding
-*.emb
-*.npy
-*.npz
-*.h5
-*.hdf5
-*.pkl
-*.pickle
-*.joblib
-*.index
-*.faiss
-
-# Модели машинного обучения
-*.pt
-*.pth
-*.bin
-*.safetensors
-
-# Логи и временные файлы
-*.log
-*.tmp
-*.temp
+.env.*
+.python-version
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
 
-# ============ Elasticsearch ============
-# Локальные данные Elasticsearch
-elasticsearch-data/
+# Data artifacts
+data/videos/
+data/indexes/
+data/embeddings/
+data/cache/
 
-# ============ IDE и редакторы ============
-# VS Code
-.vscode/
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# PyCharm
-.idea/
-*.iml
-*.iws
-
-# Sublime Text
-*.sublime-*
-
-# ============ Операционные системы ============
-# Windows
-Desktop.ini
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Linux
-*~
-
-# ============ Конфигурационные файлы проекта ============
-# Файлы с паролями и ключами
-secrets.py
-config_secret.py
-*_secret.yaml
-*_secret.json
-
-# Docker
-docker-compose.override.yml
+# Logs
+*.log
