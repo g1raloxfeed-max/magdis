@@ -53,6 +53,14 @@ def encode_text(text: str) -> np.ndarray:
     return features[0].cpu().numpy().astype(np.float32)
 
 
+def encode_image_bgr(frame_bgr: np.ndarray) -> np.ndarray:
+    """Encode OpenCV BGR frame into CLIP embedding."""
+    import cv2
+
+    rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+    return encode_image(Image.fromarray(rgb))
+
+
 def embedding_dim() -> int:
     model, _, _ = _get_model()
     return int(model.config.projection_dim)

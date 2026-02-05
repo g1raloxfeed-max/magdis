@@ -168,10 +168,47 @@
         </div>
       </div>
 
+      <div class="grid" style="margin-top:16px;">
+        <div class="card">
+          <h3>Experiment</h3>
+          <label>Config path (on server)</label>
+          <input id="expConfigPath" value="configs/experiment_sample.json" />
+          <label>Or paste config JSON</label>
+          <textarea id="expConfig">
+{
+  "video_path": "data/videos/sample.mp4",
+  "video_id": "cam01_20260203",
+  "method_name": "embedding_delta",
+  "sampling_params": {"fps_extract": 1.0, "delta_threshold": 0.2, "min_fps": 0.5, "max_fps": 2.0},
+  "scene_params": {"abs_threshold": 0.6, "rel_drop": 0.2},
+  "aggregation": "mean",
+  "budget": {"max_frames": 1800, "max_embeddings": 2000},
+  "experiment": {"allow_reuse_index": false, "run_id": null}
+}
+          </textarea>
+          <button id="expBtn">Run experiment</button>
+          <div class="status" id="expStatus"></div>
+        </div>
+
+        <div class="card">
+          <h3>Test / Evaluation</h3>
+          <label>Index names (JSON list)</label>
+          <textarea id="testIndexes">["video_cam01_2023_11_05__method_embedding_delta__params_ab12cd__run_20260203_120000"]</textarea>
+          <label>Queries (JSON list)</label>
+          <textarea id="testQueries">["red car","person walking"]</textarea>
+          <label>Top-K</label>
+          <input id="testTopK" value="5" />
+          <button class="secondary" id="testBtn">Run test</button>
+          <div class="status" id="testStatus"></div>
+          <div class="results" id="testResults"></div>
+        </div>
+      </div>
+
       <div class="card" style="margin-top:16px;">
         <h3>Notes</h3>
         <div class="mono">
           API: POST /api/ingest (video_path, camera_id, fps), POST /api/search (query, top_k)
+          | POST /api/experiment/run, POST /api/experiment/test
         </div>
       </div>
     </div>
@@ -236,6 +273,67 @@
           });
         } catch (err) {
           searchStatus.textContent = `Error: ${err.message}`;
+        }
+      });
+
+      const expBtn = document.getElementById("expBtn");
+      const expStatus = document.getElementById("expStatus");
+      expBtn.addEventListener("click", async () => {
+        expStatus.textContent = "Running experiment...";
+        try {
+          const configPath = document.getElementById("expConfigPath").value.trim();
+          const configText = document.getElementById("expConfig").value.trim();
+          const payload = {
+            config_path: configPath.length ? configPath : null,
+            config: configText.length ? JSON.parse(configText) : null,
+          };
+          const res = await fetch("/api/experiment/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Experiment failed");
+          expStatus.textContent = `Index: ${data.index_name}, scenes: ${data.num_scenes}`;
+        } catch (err) {
+          expStatus.textContent = `Error: ${err.message}`;
+        }
+      });
+
+      const testBtn = document.getElementById("testBtn");
+      const testStatus = document.getElementById("testStatus");
+      const testResults = document.getElementById("testResults");
+      testBtn.addEventListener("click", async () => {
+        testStatus.textContent = "Running test...";
+        testResults.innerHTML = "";
+        try {
+          const payload = {
+            index_names: JSON.parse(document.getElementById("testIndexes").value),
+            queries: JSON.parse(document.getElementById("testQueries").value),
+            top_k: parseInt(document.getElementById("testTopK").value, 10),
+          };
+          const res = await fetch("/api/experiment/test", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Test failed");
+          const rows = data.results || [];
+          testStatus.textContent = `Methods: ${rows.length}`;
+          rows.forEach((row) => {
+            const div = document.createElement("div");
+            div.className = "result";
+            div.innerHTML = `
+              <div><strong>${row.index}</strong></div>
+              <div>num_scenes=${row.num_scenes} avg_similarity=${row.avg_similarity.toFixed(4)}</div>
+              <div>latency=${row.latency.toFixed(4)} stability=${row.stability.toFixed(4)}</div>
+              <div>storage_cost=${row.storage_cost}</div>
+            `;
+            testResults.appendChild(div);
+          });
+        } catch (err) {
+          testStatus.textContent = `Error: ${err.message}`;
         }
       });
     </script>

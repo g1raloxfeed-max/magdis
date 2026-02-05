@@ -10,6 +10,9 @@ from pydantic import BaseModel, Field
 
 from scripts.ingest_video import ingest_video
 from scripts.search import search_text
+from scripts.experiment import run_experiment
+from scripts.evaluation import run_tests
+from scripts.utils import maybe_load_config
 
 APP_DIR = Path(__file__).parent
 INDEX_HTML = APP_DIR / "index.html"
@@ -26,6 +29,18 @@ class IngestRequest(BaseModel):
 class SearchRequest(BaseModel):
     query: str = Field(..., description="Text query")
     top_k: int = Field(5, description="Top-K results")
+
+
+class ExperimentRequest(BaseModel):
+    config: dict | None = None
+    config_path: str | None = None
+
+
+class EvaluationRequest(BaseModel):
+    index_names: list[str]
+    queries: list[str]
+    top_k: int = 5
+    q_meta: dict | None = None
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -55,6 +70,32 @@ def api_search(payload: SearchRequest) -> JSONResponse:
     return JSONResponse({"results": results})
 
 
+@app.post("/api/experiment/run")
+def api_experiment_run(payload: ExperimentRequest) -> JSONResponse:
+    try:
+        config = payload.config or maybe_load_config(payload.config_path)
+        if config is None:
+            raise ValueError("config or config_path must be provided")
+        result = run_experiment(config)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return JSONResponse(result)
+
+
+@app.post("/api/experiment/test")
+def api_test(payload: EvaluationRequest) -> JSONResponse:
+    try:
+        result = run_tests(
+            index_names=payload.index_names,
+            queries=payload.queries,
+            top_k=payload.top_k,
+            q_meta=payload.q_meta,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return JSONResponse(result)
+
+
 @app.get("/api/health")
 def api_health() -> JSONResponse:
     return JSONResponse({"status": "ok"})
@@ -69,5 +110,13 @@ def api_example() -> JSONResponse:
             "fps": 1.0,
         },
         "search": {"query": "red car", "top_k": 5},
+        "experiment": {
+            "config_path": "configs/experiment_sample.json",
+        },
+        "test": {
+            "index_names": ["video_cam01_2023_11_05__method_embedding_delta__params_ab12cd__run_20260203_120000"],
+            "queries": ["red car", "person walking"],
+            "top_k": 5,
+        },
     }
     return JSONResponse(json.loads(json.dumps(example)))

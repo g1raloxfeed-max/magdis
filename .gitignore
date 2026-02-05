@@ -16,6 +16,7 @@ data/videos/
 data/indexes/
 data/embeddings/
 data/cache/
+data/experiments/
 
 # Logs
 *.log

@@ -22,6 +22,7 @@ def get_es_client() -> Elasticsearch:
 
 
 def ensure_index(es: Elasticsearch, dims: int, index_name: str = INDEX_NAME) -> None:
+    """Ensure frame index exists (legacy/baseline pipeline)."""
     if es.indices.exists(index=index_name):
         mapping = es.indices.get_mapping(index=index_name)
         try:
@@ -67,3 +68,54 @@ def index_frame(
         raise ValueError("Document is missing 'embedding'")
     ensure_index(es, len(embedding), index_name=index_name)
     return es.index(index=index_name, id=document.get("frame_id"), document=document)
+
+
+def ensure_scene_index(es: Elasticsearch, dims: int, index_name: str) -> None:
+    if es.indices.exists(index=index_name):
+        mapping = es.indices.get_mapping(index=index_name)
+        try:
+            existing_dims = mapping[index_name]["mappings"]["properties"]["scene_embedding"]["dims"]
+        except Exception:
+            existing_dims = None
+        if existing_dims is not None and existing_dims != dims:
+            raise ValueError(
+                f"Index {index_name} has dims={existing_dims}, expected {dims}"
+            )
+        return
+
+    mappings = {
+        "properties": {
+            "scene_id": {"type": "keyword"},
+            "video_id": {"type": "keyword"},
+            "method_name": {"type": "keyword"},
+            "params_hash": {"type": "keyword"},
+            "start_time": {"type": "date"},
+            "end_time": {"type": "date"},
+            "keyframe_path": {"type": "keyword"},
+            "frame_count": {"type": "integer"},
+            "scene_embedding": {
+                "type": "dense_vector",
+                "dims": dims,
+                "index": True,
+                "similarity": "cosine",
+            },
+        }
+    }
+    settings = {"index": {"number_of_shards": 1, "number_of_replicas": 0}}
+    es.indices.create(index=index_name, mappings=mappings, settings=settings)
+
+
+def index_scene(
+    document: dict[str, Any],
+    es: Elasticsearch | None = None,
+    index_name: str | None = None,
+) -> dict[str, Any]:
+    if es is None:
+        es = get_es_client()
+    if index_name is None:
+        raise ValueError("index_name is required for scene indexing")
+    embedding = document.get("scene_embedding")
+    if embedding is None:
+        raise ValueError("Document is missing 'scene_embedding'")
+    ensure_scene_index(es, len(embedding), index_name=index_name)
+    return es.index(index=index_name, id=document.get("scene_id"), document=document)

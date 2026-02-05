@@ -1,0 +1,28 @@
+{
+  "video_path": "data/videos/sample.mp4",
+  "video_id": "cam01_20260203",
+  "method_name": "embedding_delta",
+  "sampling_params": {
+    "fps_extract": 1.0,
+    "delta_threshold": 0.2,
+    "min_fps": 0.5,
+    "max_fps": 2.0,
+    "window_size": 3
+  },
+  "scene_params": {
+    "abs_threshold": 0.6,
+    "rel_drop": 0.2,
+    "local_min_threshold": 0.55,
+    "use_local_min": true
+  },
+  "aggregation": "mean",
+  "budget": {
+    "max_frames": 1800,
+    "max_embeddings": 2000,
+    "max_compute_time_sec": 3600
+  },
+  "experiment": {
+    "allow_reuse_index": false,
+    "run_id": null
+  }
+}
